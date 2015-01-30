@@ -25,7 +25,6 @@ main = do
   exists <- doesFileExist "Snowdrift.cabal"
   unless exists $ error "please run from the project's root directory"
   Sdm {..} <- getProgName >>= cmdArgs . sdm
-  run "sudo" ["-K"]  -- require a password the first time 'sudo' is run
   handle action db
 
 data Sdm = Sdm
@@ -122,11 +121,8 @@ x -|- y = do
 run :: String -> [String] -> IO ()
 run cmd args = void $ rawSystem cmd args
 
-postgres :: [String] -> CreateProcess
-postgres args = proc "sudo" $ ["-u", "postgres"] ++ args
-
 psql :: String -> IO ()
-psql arg = putStr =<< proc "echo" [arg] -|- postgres ["psql"]
+psql arg = putStr =<< proc "echo" [arg] -|- proc "psql" ["-U", "postgres"]
 
 cat :: String -> CreateProcess
 cat file = proc "cat" [file]
@@ -144,7 +140,7 @@ leaveLn s = leave s >> putStr "\n"
 
 doesDBExist :: DBType a => a -> IO Bool
 doesDBExist dbType = do
-  dbs <- postgres ["psql", "-lqt"] -|- proc "cut" ["-d|", "-f1"]
+  dbs <- proc "psql" ["-U", "postgres", "-lqt"] -|- proc "cut" ["-d|", "-f1"]
   return . elem (toString dbType) $ words dbs
 
 ifExists :: DBType a => a -> IO () -> IO ()
@@ -162,25 +158,10 @@ createDB dbType = psql $ "CREATE DATABASE " <> toString dbType <> ";"
 
 importDB :: DBType a => DBFile -> a -> IO ()
 importDB (DBFile f) dbType = putStr =<< cat f
-                         -|- postgres ["psql", toString dbType]
+                         -|- proc "psql" ["-U", "postgres", toString dbType]
 
 exportDB :: DBType a => a -> DBFile -> IO ()
-exportDB dbType (DBFile f) = loop
-  where
-    loop = do
-      leave $ "overwrite '" <> f <> "'? (yes/No) "
-      hFlush stdout             -- send the question to 'stdout' immediately
-      answer <- fmap (fmap toLower) getLine
-      case () of
-        _| answer == "yes" -> do
-             (_, Just o, _, _) <-
-               createProcess (postgres ["pg_dump", toString dbType]) { std_out = CreatePipe }
-             dump <- hGetContents o
-             writeFile f dump
-         | answer == "no" || null answer -> leaveLn "doing nothing"
-         | otherwise -> do
-             leaveLn "invalid argument"
-             loop
+exportDB dbType (DBFile f) = error "TEMPORARILY DISABLED FOR NO SUDO"
 
 createUser :: DBUser -> [String] -> IO ()
 createUser (DBUser u) opts = psql $ "CREATE USER " <> u <> " "
@@ -234,7 +215,6 @@ init dbs = do
 
   run "sed" [ "-i", "s/REPLACE WITH YOUR PASSPHRASE/" <> password <> "/"
             , config ]
-  run "sudo" ["chmod", "400", config]
     where
       init' :: DB -> String -> IO ()
       init' (Dev _ (DBInfo {..})) password = do
