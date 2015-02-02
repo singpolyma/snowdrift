@@ -1,0 +1,12 @@
+before_install:
+    - test -x ~/.cabal/bin/alex || ( cabal install alex && rm -rf ~/.ghc/ )
+    - alex --version
+language: haskell
+script: cabal configure --enable-tests && cabal build && dist/build/sdm/sdm init && cabal test
+sudo: false
+
+# Caching the cabal stuff means that if dependencies change, you may want to blow away the cache
+cache:
+    directories:
+        - $HOME/.cabal
+        - $HOME/.ghc
