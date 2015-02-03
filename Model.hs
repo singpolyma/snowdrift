@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-warnings-deprecations #-}
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, StandaloneDeriving #-}
 
 module Model where
