@@ -4,21 +4,13 @@ import Import
 
 import System.IO
 import System.IO.Temp
-import System.Process
-import System.Exit
 
 import Language.Haskell.TH
 
-import Data.Char
-
-
 getVersion :: IO (String, String)
-getVersion = withSystemTempFile "version" $ \ filename handle -> do
+getVersion = withSystemTempFile "version" $ \ _ handle -> do
     hClose handle
-    base <- takeWhile (not . isSpace) <$> readFile ".git/refs/heads/master"
-    ExitSuccess <- system $ "git diff " ++ base ++ " -- . >" ++ filename
-    diff <- readFile filename
-    return (base, diff)
+    return ("base", "diff")
 
 
 mkVersion :: Q Exp
