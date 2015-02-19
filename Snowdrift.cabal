@@ -320,6 +320,7 @@ executable         SnowdriftEmailDaemon
                 ExistentialQuantification
                 FlexibleContexts
                 FlexibleInstances
+                GADTs
                 GeneralizedNewtypeDeriving
                 LambdaCase
                 MultiParamTypeClasses
