@@ -5,6 +5,13 @@ language: haskell
 script: cabal configure --enable-tests && cabal build && dist/build/sdm/sdm init && cabal test
 sudo: false
 
+after_success:
+    - rm -r static/tmp
+    - mkdir dist-$(git rev-parse HEAD)
+    - cp -a dist/build/SnowdriftProcessPayments/SnowdriftProcessPayments dist/build/Snowdrift/Snowdrift dist/build/SnowdriftEmailDaemon/SnowdriftEmailDaemon dist/build/sdm/sdm dist/build/SnowdriftSendmail/SnowdriftSendmail static/ dist-$(git rev-parse HEAD)/
+    - tar -cJf dist-$(git rev-parse HEAD).tar.xz dist-$(git rev-parse HEAD)/
+    - curl --upload-file dist-$(git rev-parse HEAD).tar.xz https://transfer.sh/dist-$(git rev-parse HEAD).tar.xz
+
 # Caching the cabal stuff means that if dependencies change, you may want to blow away the cache
 cache:
     directories:
